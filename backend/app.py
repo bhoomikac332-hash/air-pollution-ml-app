@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import joblib
 import requests
@@ -9,7 +9,7 @@ CORS(app)
 # Load trained model
 model = joblib.load("model.pkl")
 
-# AQICN API token
+# AQI API token
 TOKEN = "53d7db648757fa8fd99a61898adde391beea2673"
 
 @app.route("/")
@@ -19,24 +19,23 @@ def home():
 @app.route("/predict/<city>")
 def predict(city):
     try:
-        print("City received:", city)
+        # User inputs
+        age = int(request.args.get("age", 30))
+        smoking = int(request.args.get("smoking", 0))
+        disease = int(request.args.get("disease", 0))
 
-        # AQI API (REAL-TIME DATA)
+        # AQI API
         url = f"https://api.waqi.info/feed/{city}/?token={TOKEN}"
         response = requests.get(url)
         data = response.json()
 
-        print("API response:", data)
-
-        # Check if city is valid
         if data["status"] != "ok":
-            return jsonify({"error": "City not found"})
+            return jsonify({"error": "City not found ❌"})
 
-        # Get AQI value
         aqi = data["data"]["aqi"]
 
-        # Use AQI as input to model
-        prediction = model.predict([[aqi, 30, 30]])
+        # Model prediction
+        prediction = model.predict([[aqi, age, smoking]])
 
         risk_map = {
             0: "Low Risk ✅",
@@ -44,14 +43,22 @@ def predict(city):
             2: "High Risk 🚨"
         }
 
+        disease_map = {
+            0: ["No major issues"],
+            1: ["Mild Asthma", "Allergies"],
+            2: ["Asthma", "Bronchitis", "COPD", "Lung Infection"]
+        }
+
         return jsonify({
             "city": city,
             "aqi": aqi,
-            "risk": risk_map[int(prediction[0])]
+            "age": age,
+            "smoking": smoking,
+            "risk": risk_map[int(prediction[0])],
+            "diseases": disease_map[int(prediction[0])]
         })
 
     except Exception as e:
-        print("ERROR:", str(e))
         return jsonify({"error": str(e)})
 
 if __name__ == "__main__":

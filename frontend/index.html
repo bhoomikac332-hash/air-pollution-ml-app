@@ -1,13 +1,83 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Air Pollution & Disease Predictor</title>
+</head>
+
+<body style="font-family: Arial; text-align: center; margin-top: 50px;">
+
+<h1>🌍 Air Pollution & Respiratory Disease Predictor</h1>
+
+<!-- CITY INPUT -->
+<h3>Enter City:</h3>
+<input type="text" id="city" placeholder="e.g. Delhi, Mysore, London">
+
+<br><br>
+
+<!-- AGE -->
+<h3>Enter Age:</h3>
+<input type="number" id="age" placeholder="Age">
+
+<br><br>
+
+<!-- SMOKING -->
+<h3>Smoking:</h3>
+<select id="smoking">
+    <option value="0">Non-Smoker</option>
+    <option value="1">Smoker</option>
+</select>
+
+<br><br>
+
+<!-- EXISTING DISEASE -->
+<h3>Existing Disease:</h3>
+<select id="disease">
+    <option value="0">None</option>
+    <option value="1">Asthma</option>
+    <option value="2">Bronchitis</option>
+    <option value="3">COPD</option>
+</select>
+
+<br><br>
+
+<button onclick="predict()">Predict</button>
+
+<h2 id="result"></h2>
+
+<script>
+async function predict() {
+    let city = document.getElementById("city").value.toLowerCase();
+    let age = document.getElementById("age").value;
+    let smoking = document.getElementById("smoking").value;
+    let disease = document.getElementById("disease").value;
+
+    if (!city || !age) {
+        alert("Please enter city and age");
+        return;
+    }
+
+    let url = `https://air-pollution-ml-app-4.onrender.com/predict/${city}?age=${age}&smoking=${smoking}&disease=${disease}`;
+
+    try {
+        let res = await fetch(url);
+        let data = await res.json();
+
+        if (data.error) {
+            document.getElementById("result").innerHTML = data.error;
+        } else {
+            document.getElementById("result").innerHTML =
+                "🌆 City: " + data.city + "<br>" +
+                "🌫 AQI: " + data.aqi + "<br>" +
+                "⚠ Risk: " + data.risk + "<br><br>" +
+                "🫁 Possible Diseases:<br>" +
+                data.diseases.join(", ");
+        }
+
+    } catch (e) {
+        document.getElementById("result").innerHTML = "❌ Error connecting to backend";
+    }
+}
+</script>
+
+</body>
 </html>
